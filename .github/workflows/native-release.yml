@@ -27,6 +27,8 @@ jobs:
           java-version: "17"
 
       - uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
 
       - name: Install Android SDK packages
         run: sdkmanager "platform-tools" "platforms;android-36" "build-tools;36.0.0" "ndk;27.1.12297006"
@@ -54,7 +56,7 @@ jobs:
 
   macos:
     name: Build macOS app bundle
-    runs-on: macos-15
+    runs-on: macos-26
     steps:
       - uses: actions/checkout@v4
 
@@ -135,7 +137,7 @@ jobs:
           ## Native preview downloads
 
           - **Android:** install the APK on Android 7.0 or later. It is signed with the repository's development/debug key and is for preview use; this is not a Play Store or production signing setup.
-          - **macOS:** unzip the app and move it to Applications. It is not signed with a Developer ID certificate or notarized, so Gatekeeper may block the first launch. The app includes the Control Center extension; authenticated widget actions still need the shared-session bridge described in the README.
+          - **macOS:** unzip the app and move it to Applications. It is not signed with a Developer ID certificate or notarized, so Gatekeeper may block the first launch. The included Control Center control requires macOS 26 or later; its authenticated actions still need the shared-session bridge described in the README.
 
           This is an early preview release. The web app remains available at https://doit.osbyrne.workers.dev.
           NOTES

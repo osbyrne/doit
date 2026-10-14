@@ -55,11 +55,11 @@ extension. The first build may require choosing a signing team in Xcode.
 
 ## Add the Control Center control
 
-On macOS 15 or later, open Control Center, choose **Edit Controls**, search
-for **Complete next todo**, and add it. Activating the control marks the
-oldest incomplete todo as complete. The extension currently does not share the
-app's bearer session, so authenticated API access from the control requires a
-shared credential bridge before it will work.
+The Control Center control requires macOS 26 or later. Open Control Center,
+choose **Edit Controls**, search for **Complete next todo**, and add it. The
+extension currently does not share the app's bearer session, so the Worker
+rejects its unauthenticated todo requests until a shared credential bridge is
+implemented.
 
 ## Build limitation
 

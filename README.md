@@ -13,8 +13,8 @@ Native preview builds are published on the [GitHub Releases page](https://github
   Store release.
 - **macOS:** download and unzip the app bundle. It is not signed with a
   Developer ID certificate or notarized, so Gatekeeper may block the first
-  launch. The Control Center extension is included, but authenticated widget
-  actions still need a shared-session bridge.
+  launch. The Control Center extension is included and requires macOS 26 or
+  later; its authenticated actions still need a shared-session bridge.
 
 ## Live web app and backend
 
