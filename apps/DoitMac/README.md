@@ -3,9 +3,17 @@
 This folder contains the React Native macOS companion app and its WidgetKit
 Control Center extension. The app uses the deployed Doit Worker API at
 `https://doit.osbyrne.workers.dev/api/todos` with a Better Auth bearer session.
-Email and password are supported in the app. Passkey sign-in opens the web
-origin, uses its WebAuthn support, then returns the session to the app through
-the `com.osbyrne.doit://` URL scheme.
+The app opens the system browser for sign-in and account creation, so both
+passkey and email/password flows use the web origin's WebAuthn support. After
+authentication, the browser returns to the app through the
+`com.osbyrne.doit://auth` URL scheme. The macOS app registers that scheme in its
+Info.plist; Android registers it as a browsable intent filter.
+
+The web sign-up screen supports creating a passkey-first account with an email
+address and optional name. The Worker issues an encrypted, short-lived
+registration context and only creates the account after WebAuthn registration
+verifies. Email ownership is not verified because this deployment does not yet
+have an email delivery/verification provider configured.
 
 ## Effect v4 architecture
 

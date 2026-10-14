@@ -14,17 +14,8 @@ export type AuthSession = NonNullable<
 
 export interface AuthServiceShape {
   readonly getSession: () => Effect.Effect<AuthSession | null, AuthError>;
-  readonly signIn: (
-    email: string,
-    password: string,
-  ) => Effect.Effect<void, AuthError>;
-  readonly signUp: (
-    email: string,
-    password: string,
-    name: string,
-  ) => Effect.Effect<void, AuthError>;
   readonly signOut: () => Effect.Effect<void, AuthError>;
-  readonly openPasskeySignIn: () => Effect.Effect<void, AuthError>;
+  readonly openBrowserAuth: () => Effect.Effect<void, AuthError>;
   readonly acceptCallback: (url: string) => Effect.Effect<boolean, AuthError>;
   readonly getToken: () => string;
 }
@@ -63,28 +54,18 @@ export const AuthServiceLive = Layer.succeed(AuthService, {
       catch: cause => new AuthError({ message: toErrorMessage(cause), cause }),
     }),
 
-  signIn: (email, password) =>
-    runAuthAction(signal =>
-      authClient.signIn.email({ email, password }, { signal }),
-    ),
-
-  signUp: (email, password, name) =>
-    runAuthAction(signal =>
-      authClient.signUp.email({ email, password, name }, { signal }),
-    ),
-
   signOut: () =>
     Effect.ensuring(
       runAuthAction(signal => authClient.signOut({ fetchOptions: { signal } })),
       Effect.sync(clearAuthToken),
     ),
 
-  openPasskeySignIn: () =>
+  openBrowserAuth: () =>
     Effect.tryPromise({
       try: () => Linking.openURL('https://doit.osbyrne.workers.dev/?native=1'),
       catch: cause =>
         new AuthError({
-          message: 'Could not open the browser for passkey sign-in.',
+          message: 'Could not open the browser for Doit sign-in.',
           cause,
         }),
     }),
@@ -92,7 +73,12 @@ export const AuthServiceLive = Layer.succeed(AuthService, {
   acceptCallback: url =>
     Effect.try({
       try: () => {
-        const tokenValue = url.match(/[?&]token=([^&]+)/)?.[1];
+        if (!/^com\.osbyrne\.doit:\/\/auth(?:\?|$)/i.test(url)) return false;
+        const query = url.split('?')[1]?.split('#')[0] ?? '';
+        const tokenValue = query
+          .split('&')
+          .find(value => value.startsWith('token='))
+          ?.slice(6);
         if (!tokenValue) return false;
         const token = decodeURIComponent(tokenValue);
         if (!token) return false;

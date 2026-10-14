@@ -41,10 +41,6 @@ function App() {
   const [authLoading, setAuthLoading] = useState(true);
   const [authBusy, setAuthBusy] = useState(false);
   const [authenticated, setAuthenticated] = useState(false);
-  const [register, setRegister] = useState(false);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [fullName, setFullName] = useState('');
 
   useEffect(() => {
     const runtime = ManagedRuntime.make(AppServicesLive);
@@ -169,7 +165,7 @@ function App() {
     return () => callback.remove();
   }, [acceptAuthURL, refresh, runEffect]);
 
-  const authenticate = () => {
+  const openBrowserAuth = () => {
     if (authBusy) return;
     setAuthBusy(true);
     setError(null);
@@ -177,43 +173,10 @@ function App() {
       runEffect(
         Effect.gen(function* () {
           const auth = yield* AuthService;
-          if (register) {
-            yield* auth.signUp(
-              email.trim(),
-              password,
-              fullName.trim() || email.trim().split('@')[0],
-            );
-          } else {
-            yield* auth.signIn(email.trim(), password);
-          }
-          return yield* auth.getSession();
+          yield* auth.openBrowserAuth();
         }),
-        session => {
-          setAuthBusy(false);
-          if (!session) {
-            setError(
-              'Authentication succeeded, but a session was not returned.',
-            );
-            return;
-          }
-          setAuthenticated(true);
-          setPassword('');
-          refresh();
-        },
         () => setAuthBusy(false),
-      ),
-    );
-  };
-
-  const signInWithPasskey = () => {
-    setError(null);
-    launch(
-      runEffect(
-        Effect.gen(function* () {
-          const auth = yield* AuthService;
-          yield* auth.openPasskeySignIn();
-        }),
-        () => undefined,
+        () => setAuthBusy(false),
       ),
     );
   };
@@ -232,7 +195,6 @@ function App() {
           setTodos([]);
           setEditing(null);
           setTitle('');
-          setPassword('');
           setAuthBusy(false);
         },
         () => {
@@ -320,35 +282,11 @@ function App() {
           <ActivityIndicator color="#6f63e8" style={styles.loader} />
         ) : !authenticated ? (
           <View style={styles.authPanel}>
-            <Text style={styles.heading}>
-              {register ? 'Create your account' : 'Sign in to Doit'}
+            <Text style={styles.heading}>Sign in to Doit</Text>
+            <Text style={styles.subtitle}>
+              Continue in your browser to sign in or create an account with a
+              passkey or email and password. You’ll return here when finished.
             </Text>
-            {register && (
-              <TextInput
-                accessibilityLabel="Name"
-                onChangeText={setFullName}
-                placeholder="Name"
-                style={styles.input}
-                value={fullName}
-              />
-            )}
-            <TextInput
-              accessibilityLabel="Email"
-              autoCapitalize="none"
-              keyboardType="email-address"
-              onChangeText={setEmail}
-              placeholder="Email"
-              style={styles.input}
-              value={email}
-            />
-            <TextInput
-              accessibilityLabel="Password"
-              onChangeText={setPassword}
-              placeholder="Password"
-              secureTextEntry
-              style={styles.input}
-              value={password}
-            />
             {error && (
               <Text accessibilityRole="alert" style={styles.error}>
                 {error}
@@ -357,30 +295,10 @@ function App() {
             <Pressable
               accessibilityRole="button"
               disabled={authBusy}
-              onPress={authenticate}
+              onPress={openBrowserAuth}
               style={[styles.primaryButton, authBusy && styles.disabled]}
             >
-              <Text style={styles.primaryButtonText}>
-                {register ? 'Create account' : 'Sign in'}
-              </Text>
-            </Pressable>
-            <Pressable
-              accessibilityRole="button"
-              disabled={authBusy}
-              onPress={signInWithPasskey}
-              style={styles.cancelButton}
-            >
-              <Text style={styles.cancelButtonText}>Sign in with passkey</Text>
-            </Pressable>
-            <Pressable
-              accessibilityRole="button"
-              disabled={authBusy}
-              onPress={() => setRegister(!register)}
-              style={styles.cancelButton}
-            >
-              <Text style={styles.cancelButtonText}>
-                {register ? 'Already registered? Sign in' : 'Create an account'}
-              </Text>
+              <Text style={styles.primaryButtonText}>Continue in browser</Text>
             </Pressable>
           </View>
         ) : (
