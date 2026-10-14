@@ -1,0 +1,15 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "doit",
+  "main": "src/worker.ts",
+  "compatibility_date": "2026-10-14",
+  "vars": {
+    "BETTER_AUTH_URL": "https://doit.osbyrne.workers.dev"
+  },
+  "assets": {
+    "directory": "./dist/client",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api/auth/*", "/api/todos", "/api/todos/*"]
+  }
+}

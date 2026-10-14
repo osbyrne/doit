@@ -1,0 +1,53 @@
+{
+  "name": "example-with-tsrx",
+  "version": "0.0.0",
+  "description": "",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host",
+    "build": "vite build",
+    "serve": "vite preview",
+    "test": "vitest",
+    "typecheck": "tsrx-tsc --noEmit",
+    "lint": "oxlint src",
+    "format": "oxfmt --write 'src/**/*.{ts,tsx,css,json}' '*.ts' '*.json' && bun scripts/format-tsrx.ts --write",
+    "format:check": "oxfmt --check 'src/**/*.{ts,tsx,css,json}' '*.ts' '*.json' && bun scripts/format-tsrx.ts --check",
+    "check": "bun run format:check && bun run lint && bun run typecheck && bun run test && bun run build",
+    "hooks:install": "bun scripts/install-hooks.ts",
+    "deploy": "bun scripts/deploy.ts",
+    "prepare": "bun run hooks:install"
+  },
+  "dependencies": {
+    "@better-auth/drizzle-adapter": "^1.7.7",
+    "@better-auth/passkey": "^1.7.7",
+    "@libsql/client": "^0.18.0",
+    "@solidjs/meta": "^1.0.0-next.2",
+    "@solidjs/router": "^2.0.0-next.31",
+    "@solidjs/web": "^2.0.0-rc.11",
+    "@stylexjs/stylex": "^0.19.1",
+    "better-auth": "^1.7.7",
+    "drizzle-orm": "^0.45.3",
+    "effect": "^4.0.0",
+    "solid-js": "^2.0.0-rc.11"
+  },
+  "devDependencies": {
+    "@solidjs/diagnostics": "^2.0.0-rc.11",
+    "@solidjs/start-devtools": "^1.0.0-next.4",
+    "@solidjs/testing-library": "^1.0.0-beta.3",
+    "@solidjs/vite-plugin": "^3.0.0-next.46",
+    "@testing-library/jest-dom": "^7.0.0",
+    "@tsrx/oxc": "^0.9.0",
+    "@tsrx/solid": "^0.1.64",
+    "@tsrx/typescript-plugin": "^0.3.129",
+    "drizzle-kit": "^0.31.11",
+    "eslint-plugin-solid": "~0.18.1",
+    "filesystem-routing": "0.4.0",
+    "jsdom": "^25.0.1",
+    "oxlint": "~1.79.0",
+    "typescript": "^5.9.3",
+    "vite": "^8.1.5",
+    "vite-plugin-stylex": "^0.13.0",
+    "vitest": "^5.0.0"
+  }
+}

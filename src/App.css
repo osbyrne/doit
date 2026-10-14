@@ -1,0 +1,195 @@
+body {
+  margin: 0;
+  font-family:
+    system-ui,
+    -apple-system,
+    sans-serif;
+  text-align: center;
+}
+
+nav {
+  padding: 1rem;
+  background-color: #282c34;
+}
+
+nav > a {
+  display: inline-block;
+  margin: 0 0.125rem;
+  padding: 0.4rem 0.75rem;
+  border-radius: 0.5rem;
+  color: #93c5fd;
+  font-weight: 600;
+  text-decoration: none;
+  transition:
+    background-color 150ms ease,
+    color 150ms ease;
+}
+
+nav > a:hover {
+  background-color: rgb(255 255 255 / 10%);
+  color: #dbeafe;
+}
+
+main {
+  padding: 3rem 1rem;
+}
+
+.logo {
+  animation: logo-spin infinite 20s linear;
+  height: 24vmin;
+  pointer-events: none;
+}
+
+/* The counter button styles moved into src/components/Counter.tsrx —
+   TSRX components carry their own scoped <style> blocks. */
+
+main a {
+  color: #1d5f91;
+  font-weight: 600;
+  text-decoration-color: #7bb6df;
+  text-decoration-thickness: 0.1em;
+  text-underline-offset: 0.2em;
+  transition: color 150ms ease;
+}
+
+main a:hover {
+  color: #123f63;
+}
+
+a:focus-visible {
+  outline: 3px solid #0284c7;
+  outline-offset: 3px;
+  border-radius: 0.2rem;
+}
+
+@keyframes logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+main:has(.todos) {
+  width: min(100% - 2rem, 42rem);
+  margin: 2rem auto;
+}
+
+.intro {
+  color: #52525b;
+}
+
+.todos {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  border: 1px solid #d4d4d8;
+  border-radius: 1rem;
+  background: white;
+  box-shadow: 0 8px 24px rgb(24 24 27 / 6%);
+}
+
+.todos h2 {
+  margin-top: 0;
+}
+
+.todos form {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.todos input:not([type="checkbox"]) {
+  min-width: 0;
+  flex: 1;
+  padding: 0.7rem 0.8rem;
+  border: 1px solid #a1a1aa;
+  border-radius: 0.5rem;
+  font: inherit;
+}
+
+.todos button {
+  padding: 0.65rem 0.9rem;
+  border: 0;
+  border-radius: 0.5rem;
+  background: #18181b;
+  color: white;
+  font: inherit;
+  cursor: pointer;
+}
+
+.todos button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.todos ul {
+  display: grid;
+  gap: 0.5rem;
+  margin: 1rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.todos li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 0;
+  border-top: 1px solid #e4e4e7;
+}
+
+.todos li .edit-form {
+  min-width: 0;
+  flex: 1;
+}
+
+.todo-actions {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.todos li label {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  overflow-wrap: anywhere;
+}
+
+.todos li label.completed span {
+  color: #71717a;
+  text-decoration: line-through;
+}
+
+.todos .empty {
+  color: #71717a;
+}
+
+.todos .error {
+  color: #b91c1c;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  clip-path: inset(50%);
+}
+.auth-card {
+  width: min(100%, 420px);
+  margin: 2rem auto;
+  padding: 1.5rem;
+  border: 1px solid #e4e2ec;
+  border-radius: 16px;
+  background: white;
+  display: grid;
+  gap: 1rem;
+}
+.auth-card form, .auth-card label { display: grid; gap: .5rem; }
+.auth-card form { gap: .85rem; }
+.auth-card input { min-width: 0; padding: .7rem; border: 1px solid #d6d5df; border-radius: 8px; }
+.auth-card button, .auth-row button { padding: .65rem 1rem; border: 0; border-radius: 8px; background: #6f63e8; color: white; cursor: pointer; }
+.auth-card .text-button { background: transparent; color: #5b54c7; }
+.auth-row { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: .6rem; }
