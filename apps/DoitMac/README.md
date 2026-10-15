@@ -30,22 +30,26 @@ late-running SDK promises from changing UI state after unmount. Failed Exits
 are translated into user-facing messages.
 
 Run `bun run typecheck` from this directory to check the native app's TypeScript
-project.
+project. The repo-root Flox environment pins Bun and Node; this app's
+`package.json` and `bun.lock` pin React Native and its transitive dependencies.
 
 ## Run the app on a Mac
 
-Use the same minor version of React Native and React Native macOS (currently
-0.83). From this directory:
+Use the repo's Flox environment from the repository root. It pins Bun 1.4.2
+and Node 22.21.1; this app pins React Native 0.83.10 and React Native macOS
+0.83.0. From the activated shell:
 
 ```sh
-bun install
+cd apps/DoitMac
+bun install --frozen-lockfile
 cd macos && pod install && cd ..
 bun run start
 ```
 
-In a second terminal, run:
+In a second terminal opened at the repository root, activate Flox and run:
 
 ```sh
+flox activate
 cd apps/DoitMac
 bun run macos
 ```
@@ -57,10 +61,13 @@ extension. The first build may require choosing a signing team in Xcode.
 ## Tasks from macOS
 
 The menu-bar item **Doit** opens a scrollable list of all tasks. Use the circle
-to mark a task done or click its title to open that task in the app for editing.
-The standard **Doit Tasks** widget offers the same actions for the first four
-open tasks in medium size and first seven in large size. Add it to the desktop
-or Notification Center from the macOS widget gallery.
+to mark a task done, or select the pencil to edit a title inline. The **Open
+Doit** link opens the main app.
+The standard **Doit Tasks** widget lists the first four open tasks in medium
+size and first seven in large size. Use the circle to complete a task, the
+trash button to delete it, or the title to open it in Doit for editing. The
+plus button opens the app with the new-task field focused. Add the widget to
+the desktop or Notification Center from the macOS widget gallery.
 
 The Control Center control is an **Open Doit tasks** shortcut. WidgetKit's
 ControlWidget API only supports compact controls such as buttons and toggles;

@@ -10,7 +10,7 @@ if (build.exitCode !== 0) {
 }
 
 const deploy = Bun.spawnSync(
-  ["bunx", "wrangler", "deploy", ...process.argv.slice(2)],
+  ["wrangler", "deploy", ...process.argv.slice(2)],
   {
     stdin: "inherit",
     stdout: "inherit",

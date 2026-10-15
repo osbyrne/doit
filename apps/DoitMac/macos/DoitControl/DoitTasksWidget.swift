@@ -10,7 +10,7 @@ struct DoitTasksWidget: Widget {
       DoitTasksWidgetView(entry: entry)
     }
     .configurationDisplayName("Doit Tasks")
-    .description("See your open tasks, mark them done, or open one to edit it.")
+    .description("See your tasks, complete or delete them, and open Doit to add or edit.")
     .supportedFamilies([.systemMedium, .systemLarge])
   }
 }
@@ -76,6 +76,10 @@ private struct DoitTasksWidgetView: View {
         Label("Doit", systemImage: "checklist")
           .font(.headline)
         Spacer()
+        Link(destination: DoitAPI.newTodoURL) {
+          Image(systemName: "plus")
+            .accessibilityLabel("Add a task in Doit")
+        }
         Link(destination: DoitAPI.tasksURL) {
           Image(systemName: "arrow.up.right")
             .accessibilityLabel("Open all tasks in Doit")
@@ -110,6 +114,13 @@ private struct DoitTasksWidgetView: View {
             }
             .buttonStyle(.plain)
             .accessibilityLabel("Edit \(todo.title) in Doit")
+
+            Button(intent: DeleteTodoIntent(todoID: todo.id)) {
+              Image(systemName: "trash")
+                .foregroundStyle(.secondary)
+                .accessibilityLabel("Delete \(todo.title)")
+            }
+            .buttonStyle(.plain)
           }
         }
       }
@@ -135,6 +146,25 @@ struct CompleteTodoIntent: AppIntent {
 
   func perform() async throws -> some IntentResult {
     try await DoitAPI.setCompleted(todoID, completed: true)
+    return .result()
+  }
+}
+
+struct DeleteTodoIntent: AppIntent {
+  static var title: LocalizedStringResource = "Delete task"
+  static var description = IntentDescription("Deletes a Doit task.")
+
+  @Parameter(title: "Task ID")
+  var todoID: String
+
+  init() {}
+
+  init(todoID: String) {
+    self.todoID = todoID
+  }
+
+  func perform() async throws -> some IntentResult {
+    try await DoitAPI.deleteTodo(todoID)
     return .result()
   }
 }

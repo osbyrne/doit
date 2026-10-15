@@ -3,8 +3,11 @@ import SwiftUI
 struct DoitTasksMenuBar: View {
   @State private var todos: [DoitTodo] = []
   @State private var busyIDs = Set<String>()
+  @State private var editingID: String?
+  @State private var editTitle = ""
   @State private var isLoading = false
   @State private var errorMessage: String?
+  @FocusState private var focusedTodoID: String?
 
   private var openTodos: [DoitTodo] {
     todos
@@ -100,6 +103,11 @@ struct DoitTasksMenuBar: View {
     .task {
       if todos.isEmpty { await refresh() }
     }
+    .onChange(of: editTitle) { _, title in
+      if title.count > 240 {
+        editTitle = String(title.prefix(240))
+      }
+    }
   }
 
   private func sectionTitle(_ title: String) -> some View {
@@ -125,16 +133,49 @@ struct DoitTasksMenuBar: View {
       .disabled(busyIDs.contains(todo.id))
       .help(todo.completed ? "Mark as not done" : "Mark as done")
 
-      Link(destination: DoitAPI.editURL(for: todo.id)) {
+      if editingID == todo.id {
+        TextField("Task title", text: $editTitle)
+          .textFieldStyle(.roundedBorder)
+          .focused($focusedTodoID, equals: todo.id)
+          .onSubmit { Task { await saveTitle(todo) } }
+
+        Button {
+          Task { await saveTitle(todo) }
+        } label: {
+          Image(systemName: "checkmark")
+            .frame(width: 20, height: 24)
+        }
+        .buttonStyle(.borderless)
+        .disabled(
+          busyIDs.contains(todo.id)
+            || editTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        )
+        .help("Save task title")
+
+        Button(action: cancelEditing) {
+          Image(systemName: "xmark")
+            .frame(width: 20, height: 24)
+        }
+        .buttonStyle(.borderless)
+        .disabled(busyIDs.contains(todo.id))
+        .help("Cancel title edit")
+      } else {
         Text(todo.title)
           .lineLimit(2)
           .frame(maxWidth: .infinity, alignment: .leading)
           .foregroundStyle(todo.completed ? .secondary : .primary)
           .strikethrough(todo.completed)
-          .contentShape(Rectangle())
+
+        Button {
+          beginEditing(todo)
+        } label: {
+          Image(systemName: "pencil")
+            .frame(width: 20, height: 24)
+        }
+        .buttonStyle(.borderless)
+        .disabled(!busyIDs.isEmpty || editingID != nil)
+        .help("Edit task title")
       }
-      .buttonStyle(.plain)
-      .help("Open this task in Doit to edit it")
     }
     .padding(.horizontal, 7)
     .padding(.vertical, 5)
@@ -167,6 +208,54 @@ struct DoitTasksMenuBar: View {
           createdAt: item.createdAt
         )
       }
+      errorMessage = nil
+    } catch {
+      errorMessage = error.localizedDescription
+    }
+  }
+
+  @MainActor
+  private func beginEditing(_ todo: DoitTodo) {
+    guard busyIDs.isEmpty, editingID == nil else { return }
+    editingID = todo.id
+    editTitle = todo.title
+    errorMessage = nil
+    DispatchQueue.main.async {
+      focusedTodoID = todo.id
+    }
+  }
+
+  @MainActor
+  private func cancelEditing() {
+    editingID = nil
+    editTitle = ""
+    focusedTodoID = nil
+    errorMessage = nil
+  }
+
+  @MainActor
+  private func saveTitle(_ todo: DoitTodo) async {
+    guard !busyIDs.contains(todo.id) else { return }
+    let title = editTitle.trimmingCharacters(in: .whitespacesAndNewlines)
+    guard !title.isEmpty else {
+      errorMessage = DoitAPIError.invalidTitle.localizedDescription
+      return
+    }
+
+    busyIDs.insert(todo.id)
+    defer { busyIDs.remove(todo.id) }
+    do {
+      try await DoitAPI.updateTitle(todo.id, title: title)
+      todos = todos.map { item in
+        guard item.id == todo.id else { return item }
+        return DoitTodo(
+          id: item.id,
+          title: title,
+          completed: item.completed,
+          createdAt: item.createdAt
+        )
+      }
+      if editingID == todo.id { cancelEditing() }
       errorMessage = nil
     } catch {
       errorMessage = error.localizedDescription

@@ -34,6 +34,10 @@ function isTaskListURL(url: string): boolean {
   return /^com\.osbyrne\.doit:\/\/todos(?:[/?#]|$)/i.test(url);
 }
 
+function isNewTodoURL(url: string): boolean {
+  return isTaskListURL(url) && /(?:\?|&)new=1(?:&|#|$)/i.test(url);
+}
+
 function launch(task: Promise<unknown>): void {
   task.catch((cause) => console.error("Unexpected Effect runtime failure.", cause));
 }
@@ -42,6 +46,7 @@ function App() {
   const runtimeRef = useRef<AppRuntime | null>(null);
   const controllers = useRef(new Set<AbortController>());
   const mounted = useRef(false);
+  const titleInputRef = useRef<TextInput>(null);
 
   const [todos, setTodos] = useState<ReadonlyArray<Todo>>([]);
   const [title, setTitle] = useState("");
@@ -54,6 +59,7 @@ function App() {
   const authenticatedRef = useRef(authenticated);
   authenticatedRef.current = authenticated;
   const [pendingTodoID, setPendingTodoID] = useState<string | null>(null);
+  const [pendingCreate, setPendingCreate] = useState(false);
 
   useEffect(() => {
     const runtime = ManagedRuntime.make(AppServicesLive);
@@ -125,10 +131,18 @@ function App() {
       clearPendingURL();
       const linkedTodoID = todoIDFromURL(url);
       if (linkedTodoID) {
+        setPendingCreate(false);
         setPendingTodoID(linkedTodoID);
         return;
       }
       if (isTaskListURL(url)) {
+        if (isNewTodoURL(url)) {
+          setPendingTodoID(null);
+          setEditing(null);
+          setTitle("");
+          setError(null);
+          setPendingCreate(true);
+        }
         if (authenticatedRef.current) refresh();
         return;
       }
@@ -175,8 +189,9 @@ function App() {
       });
       const url = queuedURL ?? initialURL;
       const linkedTodoID = url ? todoIDFromURL(url) : null;
+      const createNewTodo = url ? isNewTodoURL(url) : false;
       if (url && !linkedTodoID && !isTaskListURL(url)) yield* auth.acceptCallback(url);
-      return { session: yield* auth.getSession(), linkedTodoID };
+      return { session: yield* auth.getSession(), linkedTodoID, createNewTodo };
     });
 
     launch(
@@ -185,11 +200,18 @@ function App() {
         ({
           session,
           linkedTodoID,
+          createNewTodo,
         }: {
           session: AuthSession | null;
           linkedTodoID: string | null;
+          createNewTodo: boolean;
         }) => {
           if (linkedTodoID) setPendingTodoID(linkedTodoID);
+          if (createNewTodo) {
+            setTitle("");
+            setEditing(null);
+            setPendingCreate(true);
+          }
           setAuthenticated(Boolean(session));
           setAuthLoading(false);
           if (session) refresh();
@@ -204,6 +226,12 @@ function App() {
 
     return () => callback.remove();
   }, [acceptAuthURL, refresh, runEffect]);
+
+  useEffect(() => {
+    if (!pendingCreate || !authenticated || loading) return;
+    titleInputRef.current?.focus();
+    setPendingCreate(false);
+  }, [authenticated, loading, pendingCreate]);
 
   const openBrowserAuth = () => {
     if (authBusy) return;
@@ -319,6 +347,7 @@ function App() {
     if (!authenticated || !pendingTodoID) return;
     const linkedTodoID = pendingTodoID;
     setPendingTodoID(null);
+    setPendingCreate(false);
     setLoading(true);
     launch(
       runEffect(
@@ -387,6 +416,7 @@ function App() {
                 onSubmitEditing={submit}
                 placeholder="What needs doing?"
                 placeholderTextColor="#85858f"
+                ref={titleInputRef}
                 returnKeyType="done"
                 style={styles.input}
                 value={title}

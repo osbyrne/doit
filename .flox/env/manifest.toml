@@ -1,0 +1,17 @@
+schema-version = "1.17.0"
+
+[install]
+# Bun and Node use separate Flox package groups to avoid incompatible nixpkgs revisions.
+bun.pkg-path = "bun"
+bun.version = "1.4.2"
+bun.pkg-group = "bun"
+node.pkg-path = "nodejs"
+node.version = "22.21.1"
+node.pkg-group = "node"
+turso.pkg-path = "turso-cli"
+turso.version = "1.0.33"
+wrangler.pkg-path = "wrangler"
+wrangler.version = "4.148.0"
+
+[options]
+systems = ["aarch64-darwin", "aarch64-linux", "x86_64-linux"]
