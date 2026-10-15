@@ -1,7 +1,8 @@
 # Doit for macOS
 
-This folder contains the React Native macOS companion app and its WidgetKit
-Control Center extension. The app uses the deployed Doit Worker API at
+This folder contains the React Native macOS companion app, a WidgetKit task
+widget, a menu-bar task list, and a WidgetKit Control Center control. The app
+uses the deployed Doit Worker API at
 `https://doit.osbyrne.workers.dev/api/todos` with a Better Auth bearer session.
 The app opens the system browser for sign-in and account creation, so both
 passkey and email/password flows use the web origin's WebAuthn support. After
@@ -53,13 +54,27 @@ Opening `macos/com.osbyrne.doit.xcodeproj` in Xcode and running the
 `com.osbyrne.doit-macOS` scheme also builds and embeds the `DoitControl`
 extension. The first build may require choosing a signing team in Xcode.
 
-## Add the Control Center control
+## Tasks from macOS
 
-The Control Center control requires macOS 26 or later. Open Control Center,
-choose **Edit Controls**, search for **Complete next todo**, and add it. The
-extension currently does not share the app's bearer session, so the Worker
-rejects its unauthenticated todo requests until a shared credential bridge is
-implemented.
+The menu-bar item **Doit** opens a scrollable list of all tasks. Use the circle
+to mark a task done or click its title to open that task in the app for editing.
+The standard **Doit Tasks** widget offers the same actions for the first four
+open tasks in medium size and first seven in large size. Add it to the desktop
+or Notification Center from the macOS widget gallery.
+
+The Control Center control is an **Open Doit tasks** shortcut. WidgetKit's
+ControlWidget API only supports compact controls such as buttons and toggles;
+it does not allow a scrollable task list in Control Center. The shortcut opens
+the app, where the complete task list is scrollable.
+
+On macOS 26 or later, open Control Center, choose **Edit Controls**, and add
+**Open Doit tasks**. Add **Doit Tasks** separately from the desktop or
+Notification Center widget gallery.
+
+The app and extension share the Better Auth bearer token through the
+`group.com.osbyrne.doit` App Group. Register that App Group for the signing team
+in Xcode's Developer account, and keep the matching App Group capability in
+both app and extension entitlements. The extension requires macOS 26 or later.
 
 ## Build limitation
 

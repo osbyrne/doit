@@ -8,10 +8,18 @@ struct DoitMacApp: App {
   @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
 
   var body: some Scene {
-  Window("Doit", id: "main") {
+    Window("Doit", id: "main") {
       ReactNativeView(factory: appDelegate.reactNativeFactory)
+        .onOpenURL { url in
+          DoitWidgetBridge.receiveIncomingURL(url)
+        }
     }
     .defaultSize(width: 1280, height: 720)
+
+    MenuBarExtra("Doit", systemImage: "checklist") {
+      DoitTasksMenuBar()
+    }
+    .menuBarExtraStyle(.window)
   }
 }
 

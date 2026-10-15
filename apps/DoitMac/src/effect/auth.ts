@@ -1,18 +1,18 @@
-import { Context, Effect, Layer } from 'effect';
-import { Linking } from 'react-native';
+import { Context, Effect, Layer } from "effect";
+import { Linking } from "react-native";
 import {
   authClient,
   clearAuthToken,
   getAuthToken,
+  restoreAuthToken,
   setAuthToken,
-} from '../auth-client';
-import { AuthError, toErrorMessage } from './errors';
+} from "../auth-client";
+import { AuthError, toErrorMessage } from "./errors";
 
-export type AuthSession = NonNullable<
-  Awaited<ReturnType<typeof authClient.getSession>>['data']
->;
+export type AuthSession = NonNullable<Awaited<ReturnType<typeof authClient.getSession>>["data"]>;
 
 export interface AuthServiceShape {
+  readonly restoreToken: () => Effect.Effect<void, AuthError>;
   readonly getSession: () => Effect.Effect<AuthSession | null, AuthError>;
   readonly signOut: () => Effect.Effect<void, AuthError>;
   readonly openBrowserAuth: () => Effect.Effect<void, AuthError>;
@@ -20,64 +20,63 @@ export interface AuthServiceShape {
   readonly getToken: () => string;
 }
 
-export class AuthService extends Context.Service<
-  AuthService,
-  AuthServiceShape
->()('doit/AuthService') {}
+export class AuthService extends Context.Service<AuthService, AuthServiceShape>()(
+  "doit/AuthService",
+) {}
 
 function runAuthAction(
-  action: (
-    signal: AbortSignal,
-  ) => Promise<{ error?: { message?: string } | null }>,
+  action: (signal: AbortSignal) => Promise<{ error?: { message?: string } | null }>,
 ): Effect.Effect<void, AuthError> {
   return Effect.tryPromise({
-    try: async signal => {
+    try: async (signal) => {
       const result = await action(signal);
-      if (result.error)
-        throw new Error(result.error.message || 'Authentication failed.');
+      if (result.error) throw new Error(result.error.message || "Authentication failed.");
     },
-    catch: cause => new AuthError({ message: toErrorMessage(cause), cause }),
+    catch: (cause) => new AuthError({ message: toErrorMessage(cause), cause }),
   });
 }
 
 export const AuthServiceLive = Layer.succeed(AuthService, {
+  restoreToken: () =>
+    Effect.tryPromise({
+      try: () => restoreAuthToken(),
+      catch: (cause) => new AuthError({ message: toErrorMessage(cause), cause }),
+    }),
+
   getSession: () =>
     Effect.tryPromise({
       try: async () => {
         const result = await authClient.getSession();
-        if (result.error)
-          throw new Error(
-            result.error.message || 'Could not check your session.',
-          );
+        if (result.error) throw new Error(result.error.message || "Could not check your session.");
         return result.data;
       },
-      catch: cause => new AuthError({ message: toErrorMessage(cause), cause }),
+      catch: (cause) => new AuthError({ message: toErrorMessage(cause), cause }),
     }),
 
   signOut: () =>
     Effect.ensuring(
-      runAuthAction(signal => authClient.signOut({ fetchOptions: { signal } })),
+      runAuthAction((signal) => authClient.signOut({ fetchOptions: { signal } })),
       Effect.sync(clearAuthToken),
     ),
 
   openBrowserAuth: () =>
     Effect.tryPromise({
-      try: () => Linking.openURL('https://doit.osbyrne.workers.dev/?native=1'),
-      catch: cause =>
+      try: () => Linking.openURL("https://doit.osbyrne.workers.dev/?native=1"),
+      catch: (cause) =>
         new AuthError({
-          message: 'Could not open the browser for Doit sign-in.',
+          message: "Could not open the browser for Doit sign-in.",
           cause,
         }),
     }),
 
-  acceptCallback: url =>
+  acceptCallback: (url) =>
     Effect.try({
       try: () => {
         if (!/^com\.osbyrne\.doit:\/\/auth(?:\?|$)/i.test(url)) return false;
-        const query = url.split('?')[1]?.split('#')[0] ?? '';
+        const query = url.split("?")[1]?.split("#")[0] ?? "";
         const tokenValue = query
-          .split('&')
-          .find(value => value.startsWith('token='))
+          .split("&")
+          .find((value) => value.startsWith("token="))
           ?.slice(6);
         if (!tokenValue) return false;
         const token = decodeURIComponent(tokenValue);
@@ -85,9 +84,9 @@ export const AuthServiceLive = Layer.succeed(AuthService, {
         setAuthToken(token);
         return true;
       },
-      catch: cause =>
+      catch: (cause) =>
         new AuthError({
-          message: 'The browser returned an invalid sign-in link.',
+          message: "The browser returned an invalid sign-in link.",
           cause,
         }),
     }),

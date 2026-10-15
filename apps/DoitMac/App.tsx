@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -10,22 +10,32 @@ import {
   Text,
   TextInput,
   View,
-} from 'react-native';
-import { Cause, Effect, Exit, ManagedRuntime, Option } from 'effect';
-import { AppServicesLive, TodoService, type Todo } from './src/effect/todos';
-import { AuthService, type AuthSession } from './src/effect/auth';
-import { AuthError, type AppError } from './src/effect/errors';
+} from "react-native";
+import { Cause, Effect, Exit, ManagedRuntime, Option } from "effect";
+import { AppServicesLive, TodoService, type Todo } from "./src/effect/todos";
+import { AuthService, type AuthSession } from "./src/effect/auth";
+import { AuthError, type AppError } from "./src/effect/errors";
+import { clearPendingURL, reloadTasksWidget, takePendingURL } from "./src/auth-client";
 
-type AppRuntime = ManagedRuntime.ManagedRuntime<
-  AuthService | TodoService,
-  never
->;
+type AppRuntime = ManagedRuntime.ManagedRuntime<AuthService | TodoService, never>;
 type AppProgram<A> = Effect.Effect<A, AppError, AuthService | TodoService>;
 
+function todoIDFromURL(url: string): string | null {
+  const match = /^com\.osbyrne\.doit:\/\/todo\/([^/?#]+)/i.exec(url);
+  if (!match) return null;
+  try {
+    return decodeURIComponent(match[1]);
+  } catch {
+    return null;
+  }
+}
+
+function isTaskListURL(url: string): boolean {
+  return /^com\.osbyrne\.doit:\/\/todos(?:[/?#]|$)/i.test(url);
+}
+
 function launch(task: Promise<unknown>): void {
-  task.catch(cause =>
-    console.error('Unexpected Effect runtime failure.', cause),
-  );
+  task.catch((cause) => console.error("Unexpected Effect runtime failure.", cause));
 }
 
 function App() {
@@ -34,13 +44,16 @@ function App() {
   const mounted = useRef(false);
 
   const [todos, setTodos] = useState<ReadonlyArray<Todo>>([]);
-  const [title, setTitle] = useState('');
+  const [title, setTitle] = useState("");
   const [editing, setEditing] = useState<Todo | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [authLoading, setAuthLoading] = useState(true);
   const [authBusy, setAuthBusy] = useState(false);
   const [authenticated, setAuthenticated] = useState(false);
+  const authenticatedRef = useRef(authenticated);
+  authenticatedRef.current = authenticated;
+  const [pendingTodoID, setPendingTodoID] = useState<string | null>(null);
 
   useEffect(() => {
     const runtime = ManagedRuntime.make(AppServicesLive);
@@ -97,7 +110,7 @@ function App() {
           const service = yield* TodoService;
           return yield* service.list();
         }),
-        items => {
+        (items) => {
           setTodos(items);
           setError(null);
           setLoading(false);
@@ -109,6 +122,17 @@ function App() {
 
   const acceptAuthURL = useCallback(
     (url: string) => {
+      clearPendingURL();
+      const linkedTodoID = todoIDFromURL(url);
+      if (linkedTodoID) {
+        setPendingTodoID(linkedTodoID);
+        return;
+      }
+      if (isTaskListURL(url)) {
+        if (authenticatedRef.current) refresh();
+        return;
+      }
+
       launch(
         runEffect(
           Effect.gen(function* () {
@@ -116,7 +140,7 @@ function App() {
             const accepted = yield* auth.acceptCallback(url);
             return accepted ? yield* auth.getSession() : null;
           }),
-          session => {
+          (session) => {
             setAuthLoading(false);
             setAuthenticated(Boolean(session));
             if (session) refresh();
@@ -129,27 +153,43 @@ function App() {
   );
 
   useEffect(() => {
-    const callback = Linking.addEventListener('url', ({ url }) =>
-      acceptAuthURL(url),
-    );
+    const callback = Linking.addEventListener("url", ({ url }) => acceptAuthURL(url));
     const program = Effect.gen(function* () {
       const auth = yield* AuthService;
-      const url = yield* Effect.tryPromise({
-        try: () => Linking.getInitialURL(),
-        catch: cause =>
+      yield* auth.restoreToken();
+      const queuedURL = yield* Effect.tryPromise({
+        try: () => takePendingURL(),
+        catch: (cause) =>
           new AuthError({
-            message: 'Could not read the app launch URL.',
+            message: "Could not read the task link for this app launch.",
             cause,
           }),
       });
-      if (url) yield* auth.acceptCallback(url);
-      return yield* auth.getSession();
+      const initialURL = yield* Effect.tryPromise({
+        try: () => Linking.getInitialURL(),
+        catch: (cause) =>
+          new AuthError({
+            message: "Could not read the app launch URL.",
+            cause,
+          }),
+      });
+      const url = queuedURL ?? initialURL;
+      const linkedTodoID = url ? todoIDFromURL(url) : null;
+      if (url && !linkedTodoID && !isTaskListURL(url)) yield* auth.acceptCallback(url);
+      return { session: yield* auth.getSession(), linkedTodoID };
     });
 
     launch(
       runEffect(
         program,
-        (session: AuthSession | null) => {
+        ({
+          session,
+          linkedTodoID,
+        }: {
+          session: AuthSession | null;
+          linkedTodoID: string | null;
+        }) => {
+          if (linkedTodoID) setPendingTodoID(linkedTodoID);
           setAuthenticated(Boolean(session));
           setAuthLoading(false);
           if (session) refresh();
@@ -194,7 +234,7 @@ function App() {
           setAuthenticated(false);
           setTodos([]);
           setEditing(null);
-          setTitle('');
+          setTitle("");
           setAuthBusy(false);
         },
         () => {
@@ -216,16 +256,17 @@ function App() {
           const service = yield* TodoService;
           return yield* service.save(nextTitle, editing?.id);
         }),
-        saved => {
-          setTodos(current =>
+        (saved) => {
+          setTodos((current) =>
             editing
-              ? current.map(todo => (todo.id === saved.id ? saved : todo))
+              ? current.map((todo) => (todo.id === saved.id ? saved : todo))
               : [saved, ...current],
           );
-          setTitle('');
+          setTitle("");
           setEditing(null);
           setError(null);
           Keyboard.dismiss();
+          reloadTasksWidget();
         },
       ),
     );
@@ -240,13 +281,12 @@ function App() {
           yield* service.setCompleted(todo.id, !todo.completed);
           return !todo.completed;
         }),
-        completed => {
-          setTodos(current =>
-            current.map(item =>
-              item.id === todo.id ? { ...item, completed } : item,
-            ),
+        (completed) => {
+          setTodos((current) =>
+            current.map((item) => (item.id === todo.id ? { ...item, completed } : item)),
           );
           setError(null);
+          reloadTasksWidget();
         },
       ),
     );
@@ -261,18 +301,43 @@ function App() {
           yield* service.remove(todo.id);
           return todo.id;
         }),
-        id => {
-          setTodos(current => current.filter(item => item.id !== id));
+        (id) => {
+          setTodos((current) => current.filter((item) => item.id !== id));
           setError(null);
+          reloadTasksWidget();
         },
       ),
     );
   };
 
-  const beginEdit = (todo: Todo) => {
+  const beginEdit = useCallback((todo: Todo) => {
     setEditing(todo);
     setTitle(todo.title);
-  };
+  }, []);
+
+  useEffect(() => {
+    if (!authenticated || !pendingTodoID) return;
+    const linkedTodoID = pendingTodoID;
+    setPendingTodoID(null);
+    setLoading(true);
+    launch(
+      runEffect(
+        Effect.gen(function* () {
+          const service = yield* TodoService;
+          return yield* service.list();
+        }),
+        (items) => {
+          setTodos(items);
+          setError(null);
+          setLoading(false);
+          const linkedTodo = items.find((todo) => todo.id === linkedTodoID);
+          if (linkedTodo) beginEdit(linkedTodo);
+          else setError("That task could not be found.");
+        },
+        () => setLoading(false),
+      ),
+    );
+  }, [authenticated, beginEdit, pendingTodoID, runEffect]);
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -284,8 +349,8 @@ function App() {
           <View style={styles.authPanel}>
             <Text style={styles.heading}>Sign in to Doit</Text>
             <Text style={styles.subtitle}>
-              Continue in your browser to sign in or create an account with a
-              passkey or email and password. You’ll return here when finished.
+              Continue in your browser to sign in or create an account with a passkey or email and
+              password. You’ll return here when finished.
             </Text>
             {error && (
               <Text accessibilityRole="alert" style={styles.error}>
@@ -316,9 +381,7 @@ function App() {
 
             <View style={styles.composer}>
               <TextInput
-                accessibilityLabel={
-                  editing ? 'Edit todo title' : 'New todo title'
-                }
+                accessibilityLabel={editing ? "Edit todo title" : "New todo title"}
                 maxLength={240}
                 onChangeText={setTitle}
                 onSubmitEditing={submit}
@@ -338,16 +401,14 @@ function App() {
                   !title.trim() && styles.disabled,
                 ]}
               >
-                <Text style={styles.primaryButtonText}>
-                  {editing ? 'Save' : 'Add'}
-                </Text>
+                <Text style={styles.primaryButtonText}>{editing ? "Save" : "Add"}</Text>
               </Pressable>
               {editing && (
                 <Pressable
                   accessibilityRole="button"
                   onPress={() => {
                     setEditing(null);
-                    setTitle('');
+                    setTitle("");
                   }}
                   style={styles.cancelButton}
                 >
@@ -368,11 +429,9 @@ function App() {
               <FlatList
                 contentContainerStyle={styles.list}
                 data={todos}
-                keyExtractor={todo => todo.id}
+                keyExtractor={(todo) => todo.id}
                 ListEmptyComponent={
-                  <Text style={styles.empty}>
-                    You’re all caught up. Add a todo above.
-                  </Text>
+                  <Text style={styles.empty}>You’re all caught up. Add a todo above.</Text>
                 }
                 renderItem={({ item }) => (
                   <View style={styles.todoRow}>
@@ -387,16 +446,11 @@ function App() {
                       onPress={() => toggle(item)}
                       style={[styles.check, item.completed && styles.checked]}
                     >
-                      {item.completed && (
-                        <Text style={styles.checkmark}>✓</Text>
-                      )}
+                      {item.completed && <Text style={styles.checkmark}>✓</Text>}
                     </Pressable>
                     <Text
                       numberOfLines={2}
-                      style={[
-                        styles.todoTitle,
-                        item.completed && styles.completedTitle,
-                      ]}
+                      style={[styles.todoTitle, item.completed && styles.completedTitle]}
                     >
                       {item.title}
                     </Text>
@@ -426,33 +480,33 @@ function App() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: '#f5f5f8' },
+  safeArea: { flex: 1, backgroundColor: "#f5f5f8" },
   container: {
     flex: 1,
-    width: '100%',
+    width: "100%",
     maxWidth: 820,
-    alignSelf: 'center',
+    alignSelf: "center",
     paddingHorizontal: 36,
     paddingTop: 42,
   },
   authPanel: {
-    width: '100%',
+    width: "100%",
     maxWidth: 420,
-    alignSelf: 'center',
+    alignSelf: "center",
     gap: 12,
     marginTop: 36,
   },
   eyebrow: {
-    color: '#6f63e8',
+    color: "#6f63e8",
     fontSize: 12,
-    fontWeight: '800',
+    fontWeight: "800",
     letterSpacing: 1.6,
   },
-  heading: { marginTop: 10, color: '#1e1d26', fontSize: 34, fontWeight: '700' },
-  subtitle: { marginTop: 7, color: '#70707c', fontSize: 15 },
+  heading: { marginTop: 10, color: "#1e1d26", fontSize: 34, fontWeight: "700" },
+  subtitle: { marginTop: 7, color: "#70707c", fontSize: 15 },
   composer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 10,
     marginTop: 28,
   },
@@ -462,60 +516,60 @@ const styles = StyleSheet.create({
     height: 46,
     paddingHorizontal: 14,
     borderWidth: 1,
-    borderColor: '#d6d5df',
+    borderColor: "#d6d5df",
     borderRadius: 10,
-    backgroundColor: '#fff',
-    color: '#1e1d26',
+    backgroundColor: "#fff",
+    color: "#1e1d26",
     fontSize: 15,
   },
   primaryButton: {
     height: 46,
     minWidth: 74,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     paddingHorizontal: 18,
     borderRadius: 10,
-    backgroundColor: '#6f63e8',
+    backgroundColor: "#6f63e8",
   },
-  primaryButtonText: { color: '#fff', fontSize: 14, fontWeight: '700' },
+  primaryButtonText: { color: "#fff", fontSize: 14, fontWeight: "700" },
   cancelButton: { paddingHorizontal: 6, paddingVertical: 12 },
-  cancelButtonText: { color: '#5c5b68', fontSize: 14 },
+  cancelButtonText: { color: "#5c5b68", fontSize: 14 },
   pressed: { opacity: 0.75 },
   disabled: { opacity: 0.45 },
-  error: { marginTop: 14, color: '#b42318', fontSize: 14 },
+  error: { marginTop: 14, color: "#b42318", fontSize: 14 },
   loader: { marginTop: 36 },
   list: { paddingTop: 22, paddingBottom: 36 },
   empty: {
     paddingVertical: 20,
-    color: '#777683',
-    textAlign: 'center',
+    color: "#777683",
+    textAlign: "center",
     fontSize: 14,
   },
   todoRow: {
     minHeight: 60,
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 12,
     paddingVertical: 10,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#dedde5',
+    borderBottomColor: "#dedde5",
   },
   check: {
     width: 22,
     height: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     borderWidth: 1.5,
-    borderColor: '#aaa8b5',
+    borderColor: "#aaa8b5",
     borderRadius: 7,
   },
-  checked: { borderColor: '#6f63e8', backgroundColor: '#6f63e8' },
-  checkmark: { color: '#fff', fontSize: 14, fontWeight: '700' },
-  todoTitle: { flex: 1, color: '#2b2a34', fontSize: 15 },
-  completedTitle: { color: '#8c8b96', textDecorationLine: 'line-through' },
+  checked: { borderColor: "#6f63e8", backgroundColor: "#6f63e8" },
+  checkmark: { color: "#fff", fontSize: 14, fontWeight: "700" },
+  todoTitle: { flex: 1, color: "#2b2a34", fontSize: 15 },
+  completedTitle: { color: "#8c8b96", textDecorationLine: "line-through" },
   rowAction: { paddingHorizontal: 5, paddingVertical: 8 },
-  rowActionText: { color: '#5b54c7', fontSize: 13, fontWeight: '600' },
-  deleteText: { color: '#a23f46', fontSize: 13, fontWeight: '600' },
+  rowActionText: { color: "#5b54c7", fontSize: 13, fontWeight: "600" },
+  deleteText: { color: "#a23f46", fontSize: 13, fontWeight: "600" },
 });
 
 export default App;

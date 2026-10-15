@@ -13,6 +13,13 @@
 		48C7E62CD5DEBBAC1FAB1BE1 /* DoitControl.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA9E6856719E8CF8A5B77EF1 /* DoitControl.swift */; };
 		FBE167ACDF864720FE256ED8 /* DoitAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E26A65A1A32665568131076 /* DoitAPI.swift */; };
 		181398FCFD53D7EBDDFE83C5 /* DoitControl.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = 71F9E80D5C5B85FDF86062F2 /* DoitControl.appex */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy,); }; };
+		A10000000000000000000001 /* DoitAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E26A65A1A32665568131076 /* DoitAPI.swift */; };
+		A10000000000000000000002 /* DoitTasksMenuBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000010 /* DoitTasksMenuBar.swift */; };
+		A10000000000000000000003 /* DoitWidgetBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000011 /* DoitWidgetBridge.swift */; };
+		A10000000000000000000004 /* DoitWidgetBridge.m in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000012 /* DoitWidgetBridge.m */; };
+		A10000000000000000000005 /* DoitTasksWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000013 /* DoitTasksWidget.swift */; };
+		A10000000000000000000006 /* DoitAppIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000014 /* DoitAppIntents.swift */; };
+		A10000000000000000000007 /* DoitAppIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000014 /* DoitAppIntents.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -29,6 +36,11 @@
 		4E26A65A1A32665568131076 /* DoitAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DoitAPI.swift; sourceTree = "<group>"; };
 		7A0C249592E75EC2B7DFE911 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		BEF393A605FD73045AB94907 /* DoitControl.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = DoitControl.entitlements; sourceTree = "<group>"; };
+		A10000000000000000000010 /* DoitTasksMenuBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DoitTasksMenuBar.swift; sourceTree = "<group>"; };
+		A10000000000000000000011 /* DoitWidgetBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DoitWidgetBridge.swift; sourceTree = "<group>"; };
+		A10000000000000000000012 /* DoitWidgetBridge.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = DoitWidgetBridge.m; sourceTree = "<group>"; };
+		A10000000000000000000013 /* DoitTasksWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DoitTasksWidget.swift; sourceTree = "<group>"; };
+		A10000000000000000000014 /* DoitAppIntents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DoitAppIntents.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -62,6 +74,9 @@
 			isa = PBXGroup;
 			children = (
 				5142014C2437B4B30078DB4F /* AppDelegate.swift */,
+				A10000000000000000000010 /* DoitTasksMenuBar.swift */,
+				A10000000000000000000011 /* DoitWidgetBridge.swift */,
+				A10000000000000000000012 /* DoitWidgetBridge.m */,
 
 				514201512437B4B40078DB4F /* Assets.xcassets */,
 				514201562437B4B40078DB4F /* Info.plist */,
@@ -80,6 +95,7 @@
 		83CBB9F61A601CBA00E9B192 = {
 			isa = PBXGroup;
 			children = (
+				A10000000000000000000014 /* DoitAppIntents.swift */,
 				5142014A2437B4B30078DB4F /* com.osbyrne.doit-macOS */,
 				BA853C8A267742C98DD03703 /* DoitControl */,
 				832341AE1AAA6A7D00B99B32 /* Libraries */,
@@ -101,7 +117,7 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
-		BA853C8A267742C98DD03703 /* DoitControl */ = {isa = PBXGroup; children = (DA9E6856719E8CF8A5B77EF1 /* DoitControl.swift */, 4E26A65A1A32665568131076 /* DoitAPI.swift */, 7A0C249592E75EC2B7DFE911 /* Info.plist */, BEF393A605FD73045AB94907 /* DoitControl.entitlements */,); path = DoitControl; sourceTree = "<group>"; };
+		BA853C8A267742C98DD03703 /* DoitControl */ = {isa = PBXGroup; children = (DA9E6856719E8CF8A5B77EF1 /* DoitControl.swift */, A10000000000000000000013 /* DoitTasksWidget.swift */, 4E26A65A1A32665568131076 /* DoitAPI.swift */, 7A0C249592E75EC2B7DFE911 /* Info.plist */, BEF393A605FD73045AB94907 /* DoitControl.entitlements */,); path = DoitControl; sourceTree = "<group>"; };
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -301,10 +317,15 @@
 			files = (
 
 				5142014D2437B4B30078DB4F /* AppDelegate.swift in Sources */,
+				A10000000000000000000001 /* DoitAPI.swift in Sources */,
+				A10000000000000000000002 /* DoitTasksMenuBar.swift in Sources */,
+				A10000000000000000000003 /* DoitWidgetBridge.swift in Sources */,
+				A10000000000000000000004 /* DoitWidgetBridge.m in Sources */,
+				A10000000000000000000006 /* DoitAppIntents.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		75F932FA496A7B2D6FC52E21 /* Sources */ = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (48C7E62CD5DEBBAC1FAB1BE1 /* DoitControl.swift in Sources */, FBE167ACDF864720FE256ED8 /* DoitAPI.swift in Sources */,); runOnlyForDeploymentPostprocessing = 0; };
+		75F932FA496A7B2D6FC52E21 /* Sources */ = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (48C7E62CD5DEBBAC1FAB1BE1 /* DoitControl.swift in Sources */, FBE167ACDF864720FE256ED8 /* DoitAPI.swift in Sources */, A10000000000000000000005 /* DoitTasksWidget.swift in Sources */, A10000000000000000000007 /* DoitAppIntents.swift in Sources */,); runOnlyForDeploymentPostprocessing = 0; };
 /* End PBXSourcesBuildPhase section */
 
 /* Begin XCBuildConfiguration section */
@@ -357,7 +378,9 @@
 				CLANG_ENABLE_MODULES = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				DEAD_CODE_STRIPPING = NO;
-				INFOPLIST_FILE = "com.osbyrne.doit-macos/Info.plist";
+				CODE_SIGN_ENTITLEMENTS = "com.osbyrne.doit-macOS/com.osbyrne.doit.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				INFOPLIST_FILE = "com.osbyrne.doit-macOS/Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				OTHER_LDFLAGS = (
@@ -379,7 +402,9 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CURRENT_PROJECT_VERSION = 1;
-				INFOPLIST_FILE = "com.osbyrne.doit-macos/Info.plist";
+				CODE_SIGN_ENTITLEMENTS = "com.osbyrne.doit-macOS/com.osbyrne.doit.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				INFOPLIST_FILE = "com.osbyrne.doit-macOS/Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				OTHER_LDFLAGS = (
